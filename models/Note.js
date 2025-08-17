@@ -785,6 +785,28 @@ class Note {
       displayName: user ? user.displayName : 'Unknown'
     };
   }
+  
+  // Get count of notes shared with a user
+  static async getSharedNotesCount(userId) {
+    const { permissionsCollection } = this.getCollections();
+    
+    try {
+      console.log(`Getting shared notes count for user ${userId}`);
+      
+      // Get all permissions for this user
+      const permissionsSnapshot = await permissionsCollection
+        .where('userId', '==', userId)
+        .get();
+      
+      const count = permissionsSnapshot.size;
+      console.log(`User ${userId} has access to ${count} shared notes`);
+      
+      return count;
+    } catch (error) {
+      console.error(`Error getting shared notes count for user ${userId}:`, error);
+      throw error;
+    }
+  }
 }
 
 module.exports = Note;

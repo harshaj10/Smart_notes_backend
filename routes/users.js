@@ -66,4 +66,23 @@ router.get('/notes/:noteId/collaborators', authenticate, async (req, res) => {
   }
 });
 
+// Get count of notes shared with a specific user
+router.get('/:userId/shared-notes-count', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const requesterId = req.userId;
+    
+    // Only allow users to get their own count or admin users
+    if (userId !== requesterId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const count = await Note.getSharedNotesCount(userId);
+    res.json({ count });
+  } catch (error) {
+    console.error('Error getting shared notes count:', error);
+    res.status(500).json({ error: 'Failed to get shared notes count' });
+  }
+});
+
 module.exports = router;

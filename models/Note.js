@@ -354,12 +354,6 @@ class Note {
     const owner = docToObject(ownerDoc);
     const senderName = owner ? owner.displayName : 'Someone';
 
-    // Check if note exists and user is the owner
-    const noteDoc = await notesCollection.doc(noteId).get();
-    if (!noteDoc.exists) throw new Error('Note not found');
-    
-    const note = docToObject(noteDoc);
-    
     // Check permission (only owner or admin can share)
     let hasPermission = note.createdBy === ownerId;
     

@@ -1,6 +1,7 @@
 const { getFirestore, docToObject, snapshotToArray } = require('../config/firestore');
 const { v4: uuidv4 } = require('uuid');
 const User = require('./User');
+const emailService = require('../services/emailService');
 
 class Note {
   static getCollections() {
@@ -342,6 +343,17 @@ class Note {
     // Normalize email to lowercase for consistent searching
     const normalizedEmail = recipientEmail.toLowerCase().trim();
     
+    // Get note details for email
+    const noteDoc = await notesCollection.doc(noteId).get();
+    if (!noteDoc.exists) throw new Error('Note not found');
+    
+    const note = docToObject(noteDoc);
+    
+    // Get owner details for email
+    const ownerDoc = await usersCollection.doc(ownerId).get();
+    const owner = docToObject(ownerDoc);
+    const senderName = owner ? owner.displayName : 'Someone';
+
     // Check if note exists and user is the owner
     const noteDoc = await notesCollection.doc(noteId).get();
     if (!noteDoc.exists) throw new Error('Note not found');
@@ -420,6 +432,21 @@ class Note {
           console.log(`Created permission for placeholder user ${placeholderUser.id} on note ${noteId}`);
         }
         
+        // Send email notification for placeholder user
+        try {
+          await emailService.sendNoteSharedEmail(
+            normalizedEmail,
+            senderName,
+            note.title || 'Untitled Note',
+            noteId,
+            permission
+          );
+          console.log(`Email notification sent to ${normalizedEmail}`);
+        } catch (emailError) {
+          console.error('Failed to send email notification:', emailError);
+          // Don't fail the sharing process if email fails
+        }
+
         return { success: true, recipient: placeholderUser };
       } catch (error) {
         console.error(`Error creating placeholder user or permission: ${error.message}`);
@@ -453,6 +480,21 @@ class Note {
       console.log(`Created new permission for user ${recipient.id} on note ${noteId}`);
     }
     
+    // Send email notification to existing user
+    try {
+      await emailService.sendNoteSharedEmail(
+        recipient.email,
+        senderName,
+        note.title || 'Untitled Note',
+        noteId,
+        permission
+      );
+      console.log(`Email notification sent to ${recipient.email}`);
+    } catch (emailError) {
+      console.error('Failed to send email notification:', emailError);
+      // Don't fail the sharing process if email fails
+    }
+
     return { success: true, recipient };
   }
   

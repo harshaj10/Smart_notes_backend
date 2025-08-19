@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const User = require('../models/User');
 const Note = require('../models/Note');
+const emailService = require('../services/emailService');
 
 // Get user by ID (public profile info)
 router.get('/:userId', authenticate, async (req, res) => {
@@ -82,6 +83,24 @@ router.get('/:userId/shared-notes-count', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error getting shared notes count:', error);
     res.status(500).json({ error: 'Failed to get shared notes count' });
+  }
+});
+
+// Send welcome email (can be called when user first registers)
+router.post('/send-welcome-email', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await User.getUserById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    await emailService.sendWelcomeEmail(user.email, user.displayName);
+    res.json({ message: 'Welcome email sent successfully' });
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    res.status(500).json({ error: 'Failed to send welcome email' });
   }
 });
 

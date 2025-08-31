@@ -23,3 +23,4 @@ You can modify the email service configuration in `services/emailService.js` to 
 - Welcome emails for new users
 - HTML email templates with responsive design
 - Graceful error handling (sharing works even if email fails)
+
